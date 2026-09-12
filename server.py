@@ -24,6 +24,7 @@ import mimetypes
 import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import unquote
 
 PORT = int(os.environ.get("GIFT_PORT", "8770"))
 HOST = os.environ.get("GIFT_HOST", "0.0.0.0")
@@ -143,7 +144,12 @@ def _cached_py_files(d):
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "TheGift/1.0"
+    server_version = "TheGift/1.0"  # sys_version (Python version) is not advertised
+
+    timeout = 60  # drop stuck connections instead of pinning a thread forever
+
+    def version_string(self):
+        return self.server_version
 
     def _send(self, code, body, content_type):
         self.send_response(code)
@@ -165,7 +171,10 @@ class Handler(BaseHTTPRequestHandler):
     def _handle(self):
         if self.command not in ("GET", "HEAD"):
             return self._not_found()
-        path = self.path.split("?", 1)[0].split("#", 1)[0]
+        # keep the encoded form for redirects, decode for the filesystem
+        raw_path, _, query = self.path.partition("?")
+        raw_path = raw_path.split("#", 1)[0]
+        path = unquote(raw_path)
         if path == "/" or path == "/index.html":
             return self._send(200, landing_page(), "text/html; charset=utf-8")
 
@@ -182,10 +191,10 @@ class Handler(BaseHTTPRequestHandler):
             rel = Path(*parts) if parts else Path()
             if any(part in HIDDEN or part.startswith(".") for part in parts):
                 return self._not_found()
-            if not path.endswith("/"):
+            if not raw_path.endswith("/"):
                 # canonicalise directories to a trailing slash so relative links work
                 self.send_response(301)
-                self.send_header("Location", path + "/")
+                self.send_header("Location", raw_path + "/" + ("?" + query if query else ""))
                 self.send_header("Content-Length", "0")
                 self.end_headers()
                 return
