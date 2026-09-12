@@ -1,8 +1,8 @@
-# Model pipeline outputs — large, regenerable via model/scripts/*.py
-model/data/
-model/out/
-model/train/__pycache__/
-model/server/__pycache__/
+# Model pipeline — private, never part of the served library or this repo
+/model/
+
+# Local tool state
+.freebuff/
 
 # OS cruft
 .DS_Store
