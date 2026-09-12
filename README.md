@@ -36,6 +36,19 @@ want more (more languages, more commentaries, Hebrew/Greek interlinear/tagged te
 etc.), the source projects have a lot more available — see the per-folder READMEs for
 where to go back and pull additional material.
 
+## Serving it
+
+`server.py` (Python 3 stdlib only) serves the whole library with a landing
+page and browsable listings:
+
+```bash
+python3 server.py          # 0.0.0.0:8770 — LAN-visible
+```
+
+Never exposes `.git`, the private `model/` folder, or dotfiles. For hosting
+on the RNK box (192.168.1.202) see [deploy/HOSTING.md](deploy/HOSTING.md).
+Bulk/programmatic access should use git or rsync, not HTTP.
+
 ## Licensing
 
 Everything here is free to use, but "free" isn't monolithic:
