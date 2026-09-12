@@ -177,6 +177,8 @@ class Handler(BaseHTTPRequestHandler):
         path = unquote(raw_path)
         if path == "/" or path == "/index.html":
             return self._send(200, landing_page(), "text/html; charset=utf-8")
+        if path == "/healthz":
+            return self._send(200, b'{"ok": true}\n', "application/json; charset=utf-8")
 
         try:
             candidate = (ROOT / os.path.normpath(path.lstrip("/"))).resolve()
