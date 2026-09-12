@@ -1,0 +1,42 @@
+NAME = 'GerOffBiSt: Offene Bibel - Studienfassung'
+BOOK = 'Joshua'
+
+CHAPTERS = {
+    1: {
+        1: "Und {es geschah} nachdem Mose, der Knecht (Diener) JHWH s, gestorben war, da sprach JHWH zu Josua, dem Sohn Nuns, dem Diener Moses' {folgendermaßen}:",
+        2: 'Mose, mein Knecht (Diener) ist gestorben. Nun!, (steh auf =) brich auf, gehe durch den Jordan (diesen =) hier, du und dieses ganze Volk, in das Land, das ich euch gegeben habe, den Söhnen Israels.',
+        3: 'Jeden Ort, auf den eure Fußsohle tritt, {ihn} gebe ich euch, wie ich zu Mose gesagt (= versprochen?) habe.',
+        4: 'Von der Wüste und {diesem} dem Libanon {und} bis zum großen Strom, dem Strom Eufrat, das ganze Land der Hetiter, {und} bis zum großen Meer (die Stelle, wo die Sonne untergeht =) gen Westen, soll (wird) euer Gebiet sein.',
+        5: 'Kein Mensch wird vor dir standhalten alle Tage deines Lebens. Wie ich mit (bei) Mose gewesen bin, werde ich mit (bei) dir sein; ich werde dich nicht verlassen und ich werde dich nicht verlassen.',
+        6: 'Sei fest und sei stark, denn du wirst als Besitz geben diesem Volk das Land, das ich schwor ihren Vätern {ihnen} zu geben.',
+        7: 'Nur (bloß) sei sehr fest und stark (zu beachten =), dass du achtgibst (beachtest, beobachtest, hältst) die ganze Weisung (das „Gesetz“, die Torah) zu tun, die dir Mose, mein Knecht geboten hat. Weiche nicht von ihnen ab, [weder] zur Rechten [noch] {und} zur Linken, damit du Erfolg hast (einsichtig/fromm handelst) bei allem, worin du wandeln wirst.',
+        8: 'Nicht weichen soll dieses Buch der Torah (das Buch der Weisung) von deinem Mund, und du sollst es [vor dich hin] murmeln (darüber nachdenken) bei Tag und bei Nacht, damit du achtgibst (beachtest, beobachtest, hältst) zu tun gemäß allem, was in ihm geschrieben steht. Denn dann wird dein [Lebens-] Weg Erfolg haben (dann wirst du gedeihlich ausrichten), und dann wirst du zum Ziel gelangen.',
+        9: 'Habe ich dir nicht geboten: Sei fest und sei stark? Fürchte dich nicht und erschrecke nicht, denn mit (bei) dir [ist] JHWH, dein Gott, bei allem, worin du wandeln wirst.',
+    },
+    2: {
+        1: 'Und Josua, der Sohn Nuns, schickte von Schittim [aus] zwei Männer [als] Kundschafter heimlich [los], wobei er [zu ihnen] sagte: „Geht, begutachtet (seht) das Land und Jericho!“Also (und, dann) gingen sie [los] und kamen [in] (betraten) das Haus einer Prostituierten (ehebrecherischen Frau) - {und} ihr Name war Rahab - und blieben (schliefen, lagen) dort [über Nacht].',
+        2: 'Daraufhin (aber, und) wurde dem König von Jericho Folgendes berichtet (gesagt): „ {Siehe} In der Nacht sind Männer von den Söhnen Israels (Israeliten) gekommen, um das Land zu erkunden!“',
+        3: 'Da (dann, und) schickte der König von Jericho [Soldaten] zu Rahab, um auszurichten (zu sagen): „Liefere uns (bringe heraus) die Männer aus, [die] zu dir gekommen sind, die dein Haus betreten (zu deinem Haus gekommen) haben, denn sie sind gekommen, um das ganze Land zu erkunden.“',
+        4: 'Aber (und) die Frau hatte die beiden Männer genommen (nahm) und sie versteckt (versteckte). Deshalb (und) sagte sie: „Tatsächlich (Ja) sind die Männer zu mir gekommen, aber ich weiß (wusste, habe nicht erkannt) nicht, woher sie [kamen].',
+        5: 'Als (und) das Tor zu schließen war (geschlossen werden musste) bei Dunkelheit, {und} gingen die Männer hinaus. Ich weiß nicht (habe nicht erkannt), wohin die Männer gegangen sind. Lauft (setzt, verfolgt) ihnen schnell nach, dann könnt (werdet) ihr sie einholen!“',
+        6: 'Allerdings (aber, und) hatte sie sie hinauf auf das Dach gebracht (brachte) und sie in dem Flachsstroh (Flachsstängeln) versteckt, (Flachs des Baumes), das von ihr auf dem Dach angeordnet worden war.',
+        7: 'Da (und) folgten die Männer ihnen die Straße [entlang zum] Jordan bis zu den Furten. Aber (und) sie (man) schlossen das Tor hinter sich (ihnen), als sie hinausgingen (hinausgegangen waren) [und] hinter ihnen herliefen (verfolgten, suchten).',
+        8: 'Aber (und) bevor sie sich schlafen legten, {und} ging [Rahab] hinauf zu ihnen auf das Dach',
+        9: 'und sagte zu den Männern: „Ich weiß, dass JHWH euch das Land gegeben hat und dass Angst vor euch uns befallen hat, und dass alle Bewohner des Landes vor eurem Anblick (Gesicht) vergehen (erzittern; schmelzen).',
+        10: 'Denn sie haben davon gehört, wie JHWH das Wasser des Schilfmeeres vor euch vertrocknen ließ, als ihr aus Ägypten auszogt, und was ihr mit den beiden Amoriterkönigen machtet, die auf der anderen Seite des Jordans [herrschten], Sihon und Og, an denen ihr den Bann vollstreckt (die ihr völlig vernichtet) habt.',
+        11: 'Als (und) wir [das] hörten, {und} zerfloss unser Herz und kein Atem (Geist) war mehr in irgendeinem [von uns] wegen euch. Denn JHWH, euer Gott, ist Gott im Himmel oben und auf der Erde unten.',
+        12: 'Und jetzt schwört mir doch bei (auf) JHWH! Wie (da) ich an euch Güte (Barmherzigkeit) erwiesen (getan) habe, so (und) müsst (sollt) auch ihr am Haus meines Vater Güte erweisen (tun) und mir ein Zeichen der Ehrlichkeit (Wahrheit, Treue) geben:',
+        13: '[Schwört mir,] dass (und) ihr meinen Vater und meine Mutter, {und} Brüder, {und} Schwestern und alles, was (alle, die zu) ihnen [gehört], am Leben lasst und unsere Leben vor (aus) dem Tod rettet!“',
+        14: 'Da sagten die Männer zu ihr: „Unser Leben für (anstelle) euch, [wenn] ihr sterbt! Wenn ihr diese unsere Sache (Angelegenheit) nicht meldet, und {es wird geschehen} sobald (wenn) JHWH uns das Land gibt, dann (und) werden wir an dir Güte (Barmherzigkeit) und Ehrlichkeit (Wahrheit) erweisen (tun).“',
+        15: 'Darauf (und) ließ sie sie an einem Seil hinab durch das Fenster, denn ihr Haus [war] in der Wand der Stadtmauer, sie wohnte also (so dass, und) in der Stadtmauer.',
+        16: 'Und (da) sie sagte zu ihnen: „Geht in das Hügelland (Gebirge; zum Hügel/Berg), damit [eure] Verfolger nicht auf euch stoßen, und versteckt euch dort [für] drei Tage, bis die Verfolger umkehren. {und} Danach könnt ihr euren Weg gehen.“',
+        17: 'Da sagten die Männer zu ihr: „Wir [werden] unschuldig in Bezug auf (von) diesen Eid [sein], den du uns hast schwören lassen.',
+        18: 'Wenn wir in das Land kommen, musst (sollst) du diese Schnur (Seil) [aus] scharlachrotem Faden in das Fenster binden, [durch] das du uns hinabgelassen hast, und deinen Vater, {und} deine Mutter und deine Geschwister (Brüder) und die gesamte Hausgemeinschaft (Haus) deines Vaters zu dir in das Haus holen (versammeln).',
+        19: 'Aber (und) {es wird geschehen} jeder, der durch die Tür deines Hauses {hinaus} nach draußen geht, dessen Blut [soll] ([wird]) auf seinem Haupt sein, und (dann, so dass) wir werden unschuldig sein. Aber (und) jeder, der bei dir im Haus sein wird, dessen Blut [soll] ([wird]) auf unserem Haupt sein, wenn Hand an ihn gelegt wird.',
+        20: 'Doch (und) wenn du {diese} unsere Angelegenheit (Sache) meldest, dann (und) werden wir unschuldig in Bezug auf deinen Eid sein, den du uns hast schwören lassen.“',
+        21: 'Da (und) sagte sie: „Nach euren Worten, so [sei] es (soll es geschehen).“Dann (und) ließ sie sie gehen (schickte sie fort), und sie brachen auf (gingen), und sie band die rote Schnur in das Fenster.',
+        22: 'Und sie brachen auf (gingen) und kamen in das Hügelland (Gebirge; zum Hügel/Berg) und blieben dort drei Tage [lang], bis die Verfolger umgekehrt waren (umkehrten) und [ihre] Verfolger sie auf der ganzen Strecke (Straße) gesucht und nicht gefunden hatten.',
+        23: 'Daraufhin (und) kehrten die beiden Männer zurück und kamen aus dem Hügelland (Gebirge; vom Hügel/Berg) herab, {und} überquerten und kamen zu Josua, dem Sohn Nuns. {und} Sie erzählten ihm alles, [was] sie dort gefunden hatten.',
+        24: 'Und sie sagten zu Josua: „Weil JHWH das ganze Land in unsere Gewalt (Hand) gegeben hat, {und} sind [jetzt] alle Bewohner des Landes verzagt (erzittern; schmelzen) vor uns (unserem Anblick).“',
+    },
+}

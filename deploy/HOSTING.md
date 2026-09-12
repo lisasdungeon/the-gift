@@ -11,8 +11,8 @@ folder, or anything outside the library root.
 
 ```bash
 sudo mkdir -p /opt/rnk
-# copy or clone this folder to /opt/rnk/the-gift
-# it is ~8.3 GB with .git — rsync -a (hardlink-aware) or git clone both work
+# clone this repo to /opt/rnk/the-gift — git clone carries the whole library
+# (Bibles/formats is tracked), or rsync -a if the box already has a copy
 ```
 
 ## 2. systemd service

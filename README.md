@@ -7,7 +7,7 @@ scratch. Nothing here is paywalled, DRM'd, or account-gated.
 ## Structure
 
 ```
-Bibles/                                  140 Bible translations, plain JSON, one file each
+Bibles/                                  140 Bible translations, three formats under Bibles/formats/
 Study Guides/
   Commentaries and Reference/            20 classic commentaries & reference works (SWORD format)
 ```
@@ -16,9 +16,9 @@ Study Guides/
 
 140 translations across ~50 languages, compiled by the [scrollmapper/bible_databases](https://github.com/scrollmapper/bible_databases)
 project from public-domain and freely-licensed source texts (mostly digitized via the
-CrossWire SWORD Project). Each translation is a single `.json` file with a simple
-`translation → books → chapters → verses` structure. See [Bibles/README.md](Bibles/README.md)
-for the format and a list of notable translations.
+CrossWire SWORD Project). Three formats ship under `Bibles/formats/`: plain text
+(one UTF-8 `.txt` per translation — the readable copy), per-book and per-language
+python files for scripting, and cross-reference correlate data.
 
 ## Study Guides/Commentaries and Reference/
 

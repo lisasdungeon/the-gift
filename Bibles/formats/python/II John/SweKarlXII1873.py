@@ -1,0 +1,20 @@
+NAME = 'SweKarlXII1873: Svenska Karl XII:s Bibel (1873)'
+BOOK = 'II John'
+
+CHAPTERS = {
+    1: {
+        1: 'Den äldste, den utvalda Frune, och hennes barn, hvilken jag älskar i sanningen; och icke jag allenast, utan ock alle som sanningen känt hafva;',
+        2: 'För sanningens skull, som i oss blifver, och med oss vara skall i evighet.',
+        3: 'Nåd, barmhertighet, frid af Gud Fader, och af Herranom Jesu Christo, Fadrens Son, i sanningene, och i kärlekenom, vare med eder.',
+        4: 'Jag är mycket glad, att jag hafver funnit ibland din barn de der vandra i sanningene; såsom vi budet af Fadrenom fått hafve.',
+        5: 'Och nu beder jag dig, Fru; icke skrifver jag dig såsom ett nytt bud, utan det vi hadom af begynnelsen, att vi skolom älska oss inbördes.',
+        6: 'Och detta är kärleken, att vi vandrom efter hans bud. Detta är budet, som I hört hafven af begynnelsen, att I vandren deruti.',
+        7: 'Ty månge bedragare äro inkomne i verldena, de som icke bekänna Jesum Christum kommen vara i köttet; denne är bedragaren, och Antichrist.',
+        8: 'Ser eder väl före, att vi icke borttappom det vi arbetat hafvom, utan att vi fåm full lön.',
+        9: 'Hvar och en som öfverträder, och icke blifver i Christi lärdom, han hafver ingen Gud; den der blifver i Christi lärdom, han hafver både Fadren och Sonen.',
+        10: 'Kommer någor till eder, och icke hafver denna lärdomen med sig, undfår honom icke i hus, och helser honom icke heller;',
+        11: 'Ty den honom helsar, han är delaktig i hans onda gerningar.',
+        12: 'Jag hafver väl mycket att skrifva eder, dock ville jag icke med papper eller bläck; utan jag hoppas att komma till eder, och muntliga tala med eder, på det vår glädje skall vara fullkommen.',
+        13: 'Helsa dig dine utvalda systers barn. Amen.',
+    },
+}
