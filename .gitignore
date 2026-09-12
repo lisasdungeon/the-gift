@@ -4,6 +4,9 @@
 # Local tool state
 .freebuff/
 
+# Bytecode
+__pycache__/
+
 # OS cruft
 .DS_Store
 Thumbs.db
