@@ -62,20 +62,32 @@ If the box has a firewall, open 8770 (e.g. `sudo ufw allow 8770`).
 ./deploy/deploy.sh    # restart the service, then smoke-check the landing page
 ```
 
-## 5. Public name (later)
+## 5. Public name (live)
 
-The hub links `https://gift.rnkstudios.uk`. When you're ready:
+The hub links `https://gift.rnkstudios.uk` — this is live via the
+`rnkstudios-web` Cloudflare tunnel whose connector runs on atlas under pm2
+(`rnkstudios-web-tunnel`, config `~/.cloudflared/rnkstudios-web.yml`). Its
+ingress already maps the hostname to this service:
 
-1. DNS: `gift.rnkstudios.uk` → the box's public address.
-2. TLS + reverse proxy in front (Caddy, like the Curator's deployment):
-
+```yaml
+  - hostname: gift.rnkstudios.uk
+    service: http://localhost:8770
 ```
-gift.rnkstudios.uk {
-    reverse_proxy 127.0.0.1:8770
-}
+
+TLS terminates at Cloudflare's edge (public cert, auto-renewed) and the
+connector dials out, so there is nothing to forward or install on the box —
+no Caddy needed. To change the mapping, edit `rnkstudios-web.yml` and
+`pm2 restart rnkstudios-web-tunnel`.
+
+Verify:
+
+```bash
+curl -s https://gift.rnkstudios.uk/healthz          # → {"ok": true}
+curl -sI https://gift.rnkstudios.uk/ | head -3      # HTTP/2 200, server: cloudflare
 ```
 
-Until then the door is the LAN address. Bulk/programmatic access (the 229
-per-book files, the 1.2 GB python tree) should use git or rsync — the HTTP
+Both doors serve the same library: the LAN address for local use, the
+public name for the world. Bulk/programmatic access (the per-book
+files, the 1.2 GB python tree) should use git or rsync — the HTTP
 server reads whole files into memory and has no range/resume support, by
 design.
