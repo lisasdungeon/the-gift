@@ -1,0 +1,23 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Tests run against a temp fixture, not the real library, so skip
+          # cloning the ~1.8GB Bibles/Study Guides trees and full history.
+          fetch-depth: 1
+          sparse-checkout: |
+            server.py
+            test_server.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - run: python3 -m unittest test_server -v
