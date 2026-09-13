@@ -20,7 +20,6 @@ requests — there is no resume support by design.
 """
 
 import html
-import hashlib
 import mimetypes
 import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -110,6 +109,15 @@ PAGE = """<!doctype html>
 </body>
 </html>
 """
+
+
+def _human_size(n):
+    if n < 1024:
+        return f"{n} B"
+    for unit in ("KB", "MB", "GB"):
+        n /= 1024
+        if n < 1024 or unit == "GB":
+            return f"{n:.1f} {unit}"
 
 
 def count_visible(d, predicate=lambda p: True):
@@ -209,20 +217,22 @@ class Handler(BaseHTTPRequestHandler):
         return self._not_found()
 
     @staticmethod
-    def _etag(data):
-        return '"' + hashlib.md5(data).hexdigest() + '"'
+    def _etag(st):
+        # mtime+size, not a content hash — avoids reading the whole file just to
+        # answer a conditional request
+        return f'"{st.st_mtime_ns:x}-{st.st_size:x}"'
 
     def _send_file(self, candidate):
         if any(part in HIDDEN or part.startswith(".") for part in candidate.relative_to(ROOT).parts):
             return self._not_found()
         try:
-            body = candidate.read_bytes()
+            st = candidate.stat()
         except OSError:
             return self._not_found()
         ctype = READABLE_MIME.get(candidate.suffix.lower()) \
             or mimetypes.guess_type(str(candidate))[0] \
             or "application/octet-stream"
-        etag = self._etag(body)
+        etag = self._etag(st)
         cache_control = "public, max-age=604800"  # library files are static; a week bounds staleness
         if etag in {t.strip() for t in self.headers.get("If-None-Match", "").split(",")}:
             self.send_response(304)
@@ -230,6 +240,10 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Cache-Control", cache_control)
             self.end_headers()
             return
+        try:
+            body = candidate.read_bytes()
+        except OSError:
+            return self._not_found()
         self.send_response(200)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
@@ -263,7 +277,7 @@ class Handler(BaseHTTPRequestHandler):
             rows += f'<tr><td><a href="{href_for(e)}">{html.escape(e.name)}/</a></td><td class="s">{size}</td></tr>'
         for e in files:
             try:
-                size = f"{e.stat().st_size / 1_048_576:.1f} MB"
+                size = _human_size(e.stat().st_size)
             except OSError:
                 size = "—"
             rows += f'<tr><td><a href="{href_for(e)}">{html.escape(e.name)}</a></td><td class="s">{size}</td></tr>'

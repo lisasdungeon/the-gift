@@ -34,7 +34,8 @@ Restart=always
 RestartSec=3
 NoNewPrivileges=true
 ProtectSystem=strict
-ReadOnlyPaths=/opt/rnk/the-gift
+MemoryMax=512M
+TasksMax=256
 
 [Install]
 WantedBy=multi-user.target
