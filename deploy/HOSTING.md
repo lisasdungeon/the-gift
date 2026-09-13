@@ -92,3 +92,18 @@ public name for the world. Bulk/programmatic access (the per-book
 files, the 1.2 GB python tree) should use git or rsync — the HTTP
 server reads whole files into memory and has no range/resume support, by
 design.
+
+## 6. Monitoring
+
+Two cron jobs on atlas, both scoped to this project only:
+
+- `deploy/gift-healthcheck.sh` — every 5 minutes, hits the public
+  `/healthz` door (catches service, tunnel, DNS, and edge failures alike)
+  and emails on down/recovery transitions. Logs to `/home/rnk/gift-health.log`.
+- `deploy/deadman.sh` — watches that healthcheck's log for staleness (if
+  cron itself stops running it, the healthcheck's silence wouldn't
+  otherwise be noticed) and logs `STALE`/`RECOVERED` transitions.
+
+Neither script is a general atlas monitoring tool — if other projects on
+atlas need the same deadman-switch pattern, that belongs in a shared ops
+repo, not copied into each project's `deploy/`.
