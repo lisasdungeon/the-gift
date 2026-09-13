@@ -14,6 +14,10 @@ Dot-directories (.git, .claude, …) and the private model/ folder are never
 served. Bulk/programmatic access should use git or rsync, not HTTP range
 requests — there is no resume support by design.
 
+At most GIFT_MAX_CONCURRENT connections are processed at once; beyond that,
+new connections get an immediate 503 instead of piling up worker threads
+(this is a threading server with no other concurrency cap).
+
   GET /                → landing page (library counts, links to browse)
   GET /<path>/         → browsable listing
   GET /<path>/<file>   → the file (text/* UTF-8 for readable formats)
@@ -22,12 +26,14 @@ requests — there is no resume support by design.
 import html
 import mimetypes
 import os
+import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote
 
 PORT = int(os.environ.get("GIFT_PORT", "8770"))
 HOST = os.environ.get("GIFT_HOST", "0.0.0.0")
+MAX_CONCURRENT = int(os.environ.get("GIFT_MAX_CONCURRENT", "40"))
 ROOT = Path(__file__).resolve().parent
 
 # never exposed over HTTP, whatever the request
@@ -319,6 +325,48 @@ LISTING = """<!doctype html>
 """
 
 
+class BoundedThreadingHTTPServer(ThreadingHTTPServer):
+    """ThreadingHTTPServer with a cap on concurrently-processed connections.
+
+    Plain ThreadingMixIn spawns one thread per connection with no limit, so a
+    handful of slow or numerous clients can pile up unbounded threads/memory.
+    Past the cap, a new connection gets an immediate 503 instead of a thread.
+    """
+
+    daemon_threads = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._slots = threading.Semaphore(MAX_CONCURRENT)
+
+    def process_request(self, request, client_address):
+        if not self._slots.acquire(blocking=False):
+            self._reject(request)
+            return
+
+        def run():
+            try:
+                self.process_request_thread(request, client_address)
+            finally:
+                self._slots.release()
+
+        threading.Thread(target=run, daemon=True).start()
+
+    @staticmethod
+    def _reject(request):
+        try:
+            request.sendall(b"HTTP/1.1 503 Service Unavailable\r\n"
+                             b"Connection: close\r\nContent-Length: 0\r\n\r\n")
+        except OSError:
+            pass
+        finally:
+            try:
+                request.close()
+            except OSError:
+                pass
+
+
 if __name__ == "__main__":
-    print(f"The Gift: serving {ROOT} on http://{HOST}:{PORT}")
-    ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()
+    print(f"The Gift: serving {ROOT} on http://{HOST}:{PORT} "
+          f"(max {MAX_CONCURRENT} concurrent)")
+    BoundedThreadingHTTPServer((HOST, PORT), Handler).serve_forever()
