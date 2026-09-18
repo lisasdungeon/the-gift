@@ -48,7 +48,7 @@ prints anything else, go to the rollback (§6) before debugging live.
 curl -s http://127.0.0.1:8770/healthz
 # → {"ok": true}
 
-curl -s http://127.0.0.1:8770/ | grep -oE '140 translations|229 folders|15,672|20 SWORD modules'
+curl -s http://127.0.0.1:8770/ | grep -oE '140 translations|228 folders|15,672|20 SWORD modules'
 # → all four lines (the counts are computed from disk, so this also
 #   proves the library tree is intact after the pull; "15,672" alone
 #   because the page wraps that number onto its own line)
