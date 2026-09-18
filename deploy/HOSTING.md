@@ -113,3 +113,13 @@ Two cron jobs on atlas, both scoped to this project only:
 Neither script is a general atlas monitoring tool — if other projects on
 atlas need the same deadman-switch pattern, that belongs in a shared ops
 repo, not copied into each project's `deploy/`.
+
+**Known divergence (since v1.1.0):** the copy actually running as
+`~/deadman.sh` on atlas is older and additionally watches atlas-wide
+`sysstat` daily stats (`sa$(date +%d)`, 25-min limit) alongside
+gift-health. That watch is an atlas concern — atlas's crontab is
+managed by rnk-sovereign — so it should move to that layer rather than
+grow inside this repo. Until then: **do not sync deploy/deadman.sh over
+~/deadman.sh**; it would silently drop the sysstat watch. gift-health
+itself is watched identically by both copies, so this project's
+monitoring is unaffected either way.
