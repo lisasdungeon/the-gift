@@ -29,6 +29,10 @@ User=www-data
 WorkingDirectory=/opt/rnk/the-gift
 Environment=GIFT_HOST=0.0.0.0
 Environment=GIFT_PORT=8770
+# Server reads whole files into memory; the default cap (32) is sized so a
+# worst-case burst of the largest file (~14 MB) stays inside MemoryMax.
+# If you change one, change the other.
+Environment=GIFT_MAX_CONCURRENT=32
 ExecStart=/usr/bin/python3 server.py
 Restart=always
 RestartSec=3

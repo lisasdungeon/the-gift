@@ -22,8 +22,8 @@ SOFTWARE.
 
 ---
 
-This license covers this repository's own original work (structure, tooling
-such as Bibles/tools/read_bible.py, and documentation). The Bible translations
+This license covers this repository's own original work (structure, tooling, and
+documentation). The Bible translations
 and commentaries themselves are third-party public-domain or openly-licensed
 content with their own licensing terms — see Bibles/LICENSE and
 "Study Guides/README.md" for the license that applies to each text.

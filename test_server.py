@@ -10,7 +10,6 @@ import os
 os.environ.setdefault("GIFT_MAX_CONCURRENT", "3")
 
 import http.client
-import socket
 import tempfile
 import threading
 import time
@@ -29,6 +28,7 @@ class GiftServerTestCase(unittest.TestCase):
         cls.tmp = tempfile.TemporaryDirectory()
         root = Path(cls.tmp.name)
         (root / "README.md").write_text("# The Gift (test fixture)\n")
+        (root / "LICENSE").write_text("MIT (test fixture)\n")
         (root / "Bibles").mkdir()
         (root / "Bibles" / "sample.txt").write_text("in the beginning\n")
         (root / "deploy").mkdir()
@@ -109,6 +109,12 @@ class GiftServerTestCase(unittest.TestCase):
         self.assertEqual(resp.status, 200)
         self.assertIn(b"<table>", body)
 
+    def test_extensionless_license_served_as_text(self):
+        resp, body = self.request("GET", "/LICENSE")
+        self.assertEqual(resp.status, 200)
+        self.assertTrue(resp.getheader("Content-Type", "").startswith("text/plain"))
+        self.assertIn(b"MIT", body)
+
     def test_etag_conditional_304(self):
         resp, _ = self.request("GET", "/README.md")
         etag = resp.getheader("ETag")
@@ -117,17 +123,74 @@ class GiftServerTestCase(unittest.TestCase):
         self.assertEqual(resp2.status, 304)
         self.assertEqual(body2, b"")
 
+    def test_favicon_served(self):
+        resp, body = self.request("GET", "/favicon.ico")
+        self.assertEqual(resp.status, 200)
+        self.assertTrue(resp.getheader("Content-Type", "").startswith("image/svg+xml"))
+        self.assertIn(b"<svg", body)
+
+    def test_landing_page_has_favicon_link(self):
+        resp, body = self.request("GET", "/")
+        self.assertEqual(resp.status, 200)
+        self.assertIn(b'rel="icon"', body)
+
     def test_concurrency_cap_returns_503(self):
-        hogs = []
+        """Fill every serving slot with real in-flight requests; a further
+        request gets 503, while a connection opened while the server is full
+        (no request sent yet) is still served once capacity frees up."""
+        blocked = threading.Event()
+
+        def gate(self):
+            blocked.wait(timeout=10)  # request stays in flight until released
+            return orig_serve(self)
+
+        # park each request inside the handler's serve step so it holds a slot
+        orig_serve = gift.Handler._serve
+        gift.Handler._serve = gate
         try:
-            for _ in range(gift.MAX_CONCURRENT):
-                hogs.append(socket.create_connection(("127.0.0.1", self.port), timeout=5))
-            time.sleep(0.3)  # let process_request() claim every slot
-            resp, _ = self.request("GET", "/healthz")
-            self.assertEqual(resp.status, 503)
+            conns = []
+            idle = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
+            try:
+                for _ in range(gift.MAX_CONCURRENT):
+                    c = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
+                    c.request("GET", "/")
+                    conns.append(c)
+                time.sleep(0.3)  # let them parse and claim every slot
+                resp, _ = self.request("GET", "/healthz")
+                self.assertEqual(resp.status, 503)
+
+                blocked.set()  # release the parked requests
+                for c in conns:
+                    r = c.getresponse()
+                    self.assertEqual(r.status, 200)
+                    r.read()
+
+                # the connection opened while full was never bounced — its
+                # request is served normally now that slots are free
+                idle.request("GET", "/healthz")
+                r2 = idle.getresponse()
+                self.assertEqual(r2.status, 200)
+                r2.read()
+            finally:
+                idle.close()
+                for c in conns:
+                    c.close()
         finally:
-            for s in hogs:
-                s.close()
+            gift.Handler._serve = orig_serve
+
+    def test_keepalive_requests_all_served(self):
+        """Several requests over one connection all get served (no per-
+        connection slot held between requests)."""
+        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
+        try:
+            for i in range(3):
+                conn.request("GET", "/healthz")
+                resp = conn.getresponse()
+                body = resp.read()
+                self.assertEqual(resp.status, 200)
+                self.assertIn(b'"ok": true', body)
+        finally:
+            conn.close()
 
 
 if __name__ == "__main__":

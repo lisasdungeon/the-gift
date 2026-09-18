@@ -14,9 +14,10 @@ Dot-directories (.git, .claude, …) and the private model/ folder are never
 served. Bulk/programmatic access should use git or rsync, not HTTP range
 requests — there is no resume support by design.
 
-At most GIFT_MAX_CONCURRENT connections are processed at once; beyond that,
-new connections get an immediate 503 instead of piling up worker threads
-(this is a threading server with no other concurrency cap).
+At most GIFT_MAX_CONCURRENT requests are in flight at once; beyond that,
+new requests get an immediate 503 instead of piling up work. The slot is
+taken per request, not per connection, so a browser's idle keep-alive
+connections never consume serving capacity.
 
   GET /                → landing page (library counts, links to browse)
   GET /<path>/         → browsable listing
@@ -26,6 +27,7 @@ new connections get an immediate 503 instead of piling up worker threads
 import html
 import mimetypes
 import os
+import sys
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -33,7 +35,12 @@ from urllib.parse import unquote
 
 PORT = int(os.environ.get("GIFT_PORT", "8770"))
 HOST = os.environ.get("GIFT_HOST", "0.0.0.0")
-MAX_CONCURRENT = int(os.environ.get("GIFT_MAX_CONCURRENT", "40"))
+# Files are served whole (read_bytes into memory), so worst-case RSS scales
+# with the cap: 32 × largest file (~14 MB Calvin commentary) ≈ 450 MB, which
+# fits the systemd MemoryMax=512M in deploy/HOSTING.md with headroom. Raise
+# the cap only if you raise that limit too.
+MAX_CONCURRENT = int(os.environ.get("GIFT_MAX_CONCURRENT", "32"))
+
 ROOT = Path(__file__).resolve().parent
 
 # never exposed over HTTP, whatever the request
@@ -47,12 +54,23 @@ READABLE_MIME = {
     ".json": "application/json; charset=utf-8",
 }
 
+# extensionless docs that must display in the browser, not download
+DOC_NAMES = {"LICENSE", "README"}
+
+# one-line "book" glyph that inherits the page's text color
+FAVICON = ("data:image/svg+xml," 
+           "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'>"
+           "<rect width='32' height='32' rx='6' fill='%23070b14'/>"
+           "<path d='M8 6h11a5 5 0 0 1 5 5v15H13a5 5 0 0 1-5-5z' "
+           "fill='none' stroke='%232ee6c8' stroke-width='2'/></svg>")
+
 PAGE = """<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Gift — a free library</title>
+<link rel="icon" href="{favicon}">
 <style>
   :root {{ color-scheme: dark; }}
   * {{ box-sizing: border-box; }}
@@ -140,7 +158,8 @@ def landing_page():
     python_files = _cached_py_files(py_dir)
     sword_count = count_visible(ROOT / "Study Guides/Commentaries and Reference/mods.d", lambda e: e.name.endswith(".conf"))
     return PAGE.format(text_count=text_count, python_dirs=python_dirs,
-                       python_files=f"{python_files:,}", sword_count=sword_count).encode("utf-8")
+                       python_files=f"{python_files:,}", sword_count=sword_count,
+                       favicon=FAVICON).encode("utf-8")
 
 
 _py_files_cache = None
@@ -159,7 +178,7 @@ def _cached_py_files(d):
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "TheGift/1.0"  # sys_version (Python version) is not advertised
+    server_version = "TheGift/1.1"  # sys_version (Python version) is not advertised
 
     timeout = 60  # drop stuck connections instead of pinning a thread forever
 
@@ -186,6 +205,18 @@ class Handler(BaseHTTPRequestHandler):
         self._handle()
 
     def _handle(self):
+        # one serving slot per request, not per connection — taken only once
+        # the request is parsed, released when the response is written
+        if not self.server._slots.acquire(blocking=False):
+            return self._send(503, b'{"error": "server busy"}',
+                              "application/json; charset=utf-8",
+                              cache_control="no-store")
+        try:
+            self._serve()
+        finally:
+            self.server._slots.release()
+
+    def _serve(self):
         if self.command not in ("GET", "HEAD"):
             return self._not_found()
         # keep the encoded form for redirects, decode for the filesystem
@@ -195,6 +226,9 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/" or path == "/index.html":
             return self._send(200, landing_page(), "text/html; charset=utf-8",
                               cache_control="no-cache")
+        if path == "/favicon.ico":
+            return self._send(200, FAVICON.encode("ascii"), "image/svg+xml",
+                              cache_control="public, max-age=604800")
         if path == "/healthz":
             return self._send(200, b'{"ok": true}\n', "application/json; charset=utf-8",
                               cache_control="no-store")
@@ -235,9 +269,12 @@ class Handler(BaseHTTPRequestHandler):
             st = candidate.stat()
         except OSError:
             return self._not_found()
-        ctype = READABLE_MIME.get(candidate.suffix.lower()) \
-            or mimetypes.guess_type(str(candidate))[0] \
-            or "application/octet-stream"
+        if candidate.name in DOC_NAMES and not candidate.suffix:
+            ctype = "text/plain; charset=utf-8"
+        else:
+            ctype = READABLE_MIME.get(candidate.suffix.lower()) \
+                or mimetypes.guess_type(str(candidate))[0] \
+                or "application/octet-stream"
         etag = self._etag(st)
         cache_control = "public, max-age=604800"  # library files are static; a week bounds staleness
         if etag in {t.strip() for t in self.headers.get("If-None-Match", "").split(",")}:
@@ -289,7 +326,8 @@ class Handler(BaseHTTPRequestHandler):
             rows += f'<tr><td><a href="{href_for(e)}">{html.escape(e.name)}</a></td><td class="s">{size}</td></tr>'
 
         body = LISTING.format(title=html.escape(str(rel) if str(rel) != "." else "browse"),
-                              crumbs=crumbs, rows=rows).encode("utf-8")
+                              crumbs=crumbs, rows=rows,
+                              favicon=FAVICON).encode("utf-8")
         self._send(200, body, "text/html; charset=utf-8")
 
     def log_message(self, fmt, *args):
@@ -302,6 +340,7 @@ LISTING = """<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{title} — The Gift</title>
+<link rel="icon" href="{favicon}">
 <style>
   :root {{ color-scheme: dark; }}
   body {{ margin: 0; background: #070b14; color: #e7f4f8;
@@ -326,11 +365,15 @@ LISTING = """<!doctype html>
 
 
 class BoundedThreadingHTTPServer(ThreadingHTTPServer):
-    """ThreadingHTTPServer with a cap on concurrently-processed connections.
+    """ThreadingHTTPServer with a cap on concurrently-served requests.
 
-    Plain ThreadingMixIn spawns one thread per connection with no limit, so a
-    handful of slow or numerous clients can pile up unbounded threads/memory.
-    Past the cap, a new connection gets an immediate 503 instead of a thread.
+    Plain ThreadingMixIn spawns one thread per connection with no limit. The
+    cap here bounds requests actually being processed (filesystem reads,
+    response writes) rather than whole connections, so a browser's idle
+    keep-alive connections — it holds several at once — never eat serving
+    capacity. Past the cap a request gets an immediate 503 (keep-alive
+    preserved); idle connections still each cost only a cheap parked thread
+    that dies on its 60s socket timeout.
     """
 
     daemon_threads = True
@@ -339,34 +382,15 @@ class BoundedThreadingHTTPServer(ThreadingHTTPServer):
         super().__init__(*args, **kwargs)
         self._slots = threading.Semaphore(MAX_CONCURRENT)
 
-    def process_request(self, request, client_address):
-        if not self._slots.acquire(blocking=False):
-            self._reject(request)
+    def handle_error(self, request, client_address):
+        # a client hanging up mid-transfer is the normal case on the public
+        # internet, not a server fault — one silent drop instead of a traceback
+        if isinstance(sys.exc_info()[1], (ConnectionError, TimeoutError)):
             return
-
-        def run():
-            try:
-                self.process_request_thread(request, client_address)
-            finally:
-                self._slots.release()
-
-        threading.Thread(target=run, daemon=True).start()
-
-    @staticmethod
-    def _reject(request):
-        try:
-            request.sendall(b"HTTP/1.1 503 Service Unavailable\r\n"
-                             b"Connection: close\r\nContent-Length: 0\r\n\r\n")
-        except OSError:
-            pass
-        finally:
-            try:
-                request.close()
-            except OSError:
-                pass
+        super().handle_error(request, client_address)
 
 
 if __name__ == "__main__":
     print(f"The Gift: serving {ROOT} on http://{HOST}:{PORT} "
-          f"(max {MAX_CONCURRENT} concurrent)")
+          f"(max {MAX_CONCURRENT} requests in flight)")
     BoundedThreadingHTTPServer((HOST, PORT), Handler).serve_forever()

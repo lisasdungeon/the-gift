@@ -56,4 +56,5 @@ Everything here is free to use, but "free" isn't monolithic:
 - A couple of items (flagged explicitly in `Study Guides/README.md`) are copyrighted but
   distributed with the rights-holder's permission for free non-commercial use — not
   public domain, still free to read, not necessarily free to relicense or resell.
-- Always check the specific file/module's license note before redistributing.
+- Always check the specific file/module's license note before redistributing — each
+  SWORD module's `mods.d/<name>.conf` carries its authoritative license text.

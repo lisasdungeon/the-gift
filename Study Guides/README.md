@@ -37,6 +37,7 @@ Every module's exact license text is in its own `mods.d/<name>.conf` file
 above just summarizes it. **`rwp` is the one exception to "public domain"** in this set:
 keep it if free-for-personal-study is fine for your purposes, delete `mods.d/rwp.conf`
 and `modules/comments/.../rwp` if you want a strictly public-domain-only collection.
+The repository-root `LICENSE` covers the site's own tooling, not these texts.
 
 ### How to actually read these
 
