@@ -68,6 +68,17 @@ behavior you touch — the existing tests are meant to be copied as
 templates. Docs that should stay truthful: `deploy/HOSTING.md` (hosting),
 `deploy/RELEASE.md` (release checklist), and the per-folder READMEs.
 
+## Changelog
+
+The library content itself is stable — releases are about the server
+that serves it. Details in the
+[GitHub releases](https://github.com/lisasdungeon/the-gift/releases).
+
+- **v1.1.0** (Sep 2026) — server hardening: a busy server can no longer
+  be wedged by idle connections, large files stream in chunks instead of
+  loading whole into memory, and `LICENSE` displays in-browser instead
+  of downloading. Nothing about the texts changed.
+
 ## Licensing
 
 Everything here is free to use, but "free" isn't monolithic:
