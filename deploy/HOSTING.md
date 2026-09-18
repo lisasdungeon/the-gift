@@ -29,9 +29,8 @@ User=www-data
 WorkingDirectory=/opt/rnk/the-gift
 Environment=GIFT_HOST=0.0.0.0
 Environment=GIFT_PORT=8770
-# Server reads whole files into memory; the default cap (32) is sized so a
-# worst-case burst of the largest file (~14 MB) stays inside MemoryMax.
-# If you change one, change the other.
+# Files stream to the client in chunks, so RSS stays flat regardless of
+# file size; the cap bounds worker threads, not memory.
 Environment=GIFT_MAX_CONCURRENT=32
 ExecStart=/usr/bin/python3 server.py
 Restart=always
@@ -67,6 +66,9 @@ If the box has a firewall, open 8770 (e.g. `sudo ufw allow 8770`).
 ./deploy/deploy.sh    # restart the service, then smoke-check the landing page
 ```
 
+For a real release (full verification, public-door checks, rollback plan)
+follow the checklist in [deploy/RELEASE.md](RELEASE.md).
+
 ## 5. Public name (live)
 
 The hub links `https://gift.rnkstudios.uk` — this is live via the
@@ -94,8 +96,8 @@ curl -sI https://gift.rnkstudios.uk/ | head -3      # HTTP/2 200, server: cloudf
 Both doors serve the same library: the LAN address for local use, the
 public name for the world. Bulk/programmatic access (the per-book
 files, the 1.2 GB python tree) should use git or rsync — the HTTP
-server reads whole files into memory and has no range/resume support, by
-design.
+server streams files in chunks but still has no range/resume support,
+by design.
 
 ## 6. Monitoring
 

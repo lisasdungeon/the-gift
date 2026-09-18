@@ -11,8 +11,9 @@ visitors can reach it — e.g. the RNK box at 192.168.1.202.
   GIFT_PORT=8080 python3 server.py  # different port
 
 Dot-directories (.git, .claude, …) and the private model/ folder are never
-served. Bulk/programmatic access should use git or rsync, not HTTP range
-requests — there is no resume support by design.
+served. Files stream to the client in chunks, so memory use is flat
+regardless of file size — but there is still no HTTP range/resume support
+by design; bulk/programmatic access should use git or rsync.
 
 At most GIFT_MAX_CONCURRENT requests are in flight at once; beyond that,
 new requests get an immediate 503 instead of piling up work. The slot is
@@ -35,10 +36,10 @@ from urllib.parse import unquote
 
 PORT = int(os.environ.get("GIFT_PORT", "8770"))
 HOST = os.environ.get("GIFT_HOST", "0.0.0.0")
-# Files are served whole (read_bytes into memory), so worst-case RSS scales
-# with the cap: 32 × largest file (~14 MB Calvin commentary) ≈ 450 MB, which
-# fits the systemd MemoryMax=512M in deploy/HOSTING.md with headroom. Raise
-# the cap only if you raise that limit too.
+# Files stream to the client in chunks of this size (never whole into
+# memory), so RSS stays flat no matter how big the files are.
+CHUNK_SIZE = 256 * 1024
+
 MAX_CONCURRENT = int(os.environ.get("GIFT_MAX_CONCURRENT", "32"))
 
 ROOT = Path(__file__).resolve().parent
@@ -284,17 +285,26 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             return
         try:
-            body = candidate.read_bytes()
+            f = candidate.open("rb")
         except OSError:
-            return self._not_found()
-        self.send_response(200)
-        self.send_header("Content-Type", ctype)
-        self.send_header("Content-Length", str(len(body)))
-        self.send_header("ETag", etag)
-        self.send_header("Cache-Control", cache_control)
-        self.end_headers()
-        if self.command != "HEAD":
-            self.wfile.write(body)
+            return self._not_found()  # still time to send an honest 404
+        with f:
+            self.send_response(200)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(st.st_size))
+            self.send_header("ETag", etag)
+            self.send_header("Cache-Control", cache_control)
+            self.end_headers()
+            if self.command == "HEAD":
+                return
+            try:
+                while chunk := f.read(CHUNK_SIZE):
+                    self.wfile.write(chunk)
+            except (ConnectionError, TimeoutError):
+                # client hung up mid-transfer: normal on the public internet.
+                # Content-Length is already sent, so the response is truncated —
+                # the client treats the connection dying as the error it is.
+                raise
 
     def _send_listing(self, d, rel):
         try:

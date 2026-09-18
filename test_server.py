@@ -10,6 +10,9 @@ import os
 os.environ.setdefault("GIFT_MAX_CONCURRENT", "3")
 
 import http.client
+import hashlib
+import os
+import socket
 import tempfile
 import threading
 import time
@@ -122,6 +125,61 @@ class GiftServerTestCase(unittest.TestCase):
         resp2, body2 = self.request("GET", "/README.md", headers={"If-None-Match": etag})
         self.assertEqual(resp2.status, 304)
         self.assertEqual(body2, b"")
+
+    def test_large_file_streams_byte_for_byte(self):
+        """A multi-chunk file survives the chunked path with the exact bytes
+        and an exact Content-Length."""
+        payload = os.urandom(gift.CHUNK_SIZE * 2 + 12345)  # spans 3 chunk reads
+        (gift.ROOT / "Bibles" / "big.bin").write_bytes(payload)
+        try:
+            resp = http.client.HTTPConnection("127.0.0.1", self.port, timeout=10)
+            try:
+                resp.request("GET", "/Bibles/big.bin")
+                r = resp.getresponse()
+                self.assertEqual(r.status, 200)
+                self.assertEqual(r.getheader("Content-Length"), str(len(payload)))
+                self.assertEqual(hashlib.sha256(r.read()).hexdigest(),
+                                 hashlib.sha256(payload).hexdigest())
+            finally:
+                resp.close()
+        finally:
+            (gift.ROOT / "Bibles" / "big.bin").unlink()
+
+    def test_head_request_has_no_body(self):
+        payload = b"x" * (gift.CHUNK_SIZE + 7)
+        (gift.ROOT / "Bibles" / "head.bin").write_bytes(payload)
+        try:
+            conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
+            try:
+                conn.request("HEAD", "/Bibles/head.bin")
+                r = conn.getresponse()
+                self.assertEqual(r.status, 200)
+                self.assertEqual(r.getheader("Content-Length"), str(len(payload)))
+                self.assertEqual(r.read(), b"")
+            finally:
+                conn.close()
+        finally:
+            (gift.ROOT / "Bibles" / "head.bin").unlink()
+
+    def test_client_disconnect_mid_stream_is_survivable(self):
+        """A client that hangs up mid-download must not wedge the server:
+        the handler thread ends, the slot is released, and later requests
+        are served normally."""
+        payload = os.urandom(gift.CHUNK_SIZE * 8)
+        (gift.ROOT / "Bibles" / "dip.bin").write_bytes(payload)
+        try:
+            raw = socket.create_connection(("127.0.0.1", self.port), timeout=5)
+            raw.sendall(b"GET /Bibles/dip.bin HTTP/1.1\r\n"
+                        b"Host: localhost\r\n\r\n")
+            time.sleep(0.2)  # headers + first chunks go out
+            raw.close()      # hang up mid-stream
+            time.sleep(0.3)  # give the handler thread time to notice
+
+            resp, body = self.request("GET", "/healthz")
+            self.assertEqual(resp.status, 200)
+            self.assertIn(b'"ok": true', body)
+        finally:
+            (gift.ROOT / "Bibles" / "dip.bin").unlink()
 
     def test_favicon_served(self):
         resp, body = self.request("GET", "/favicon.ico")

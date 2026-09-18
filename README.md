@@ -1,5 +1,7 @@
 # The Gift
 
+[![test](https://github.com/lisasdungeon/the-gift/actions/workflows/test.yml/badge.svg)](https://github.com/lisasdungeon/the-gift/actions/workflows/test.yml)
+
 A personal library of free, public-domain / openly-licensed Bible translations and study
 resources, pulled together from established open-data projects rather than built from
 scratch. Nothing here is paywalled, DRM'd, or account-gated.
@@ -46,8 +48,25 @@ python3 server.py          # 0.0.0.0:8770 — LAN-visible
 ```
 
 Never exposes `.git`, the private `model/` folder, or dotfiles. For hosting
-on the RNK box (192.168.1.202) see [deploy/HOSTING.md](deploy/HOSTING.md).
+on the RNK box (192.168.1.202) see [deploy/HOSTING.md](deploy/HOSTING.md);
+for a full release walkthrough see [deploy/RELEASE.md](deploy/RELEASE.md).
 Bulk/programmatic access should use git or rsync, not HTTP.
+
+## Contributing / verifying changes
+
+The server and its tests are stdlib-only Python 3 — no packages to install:
+
+```bash
+python3 -m unittest test_server -v   # the suite CI runs (runs in ~1s)
+python3 server.py                    # then poke http://127.0.0.1:8770/
+```
+
+Tests run against a tiny fixture tree, not the real library, so the suite
+is fast and hermetic. When changing `server.py`, keep the security tests
+passing (traversal guard, hidden paths) and add a regression test for any
+behavior you touch — the existing tests are meant to be copied as
+templates. Docs that should stay truthful: `deploy/HOSTING.md` (hosting),
+`deploy/RELEASE.md` (release checklist), and the per-folder READMEs.
 
 ## Licensing
 
